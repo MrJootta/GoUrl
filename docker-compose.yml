@@ -1,0 +1,30 @@
+version: "3.5"
+
+services:
+  memcached:
+    image: memcached:latest
+    ports:
+      - "11211:11211"
+    restart: always
+
+  mysqldb:
+    image: mysql:5.7
+    restart: always
+    command: --explicit_defaults_for_timestamp
+    environment:
+      MYSQL_DATABASE: shortlinks
+      MYSQL_USER: johndoe
+      MYSQL_PASSWORD: cloudflare
+      MYSQL_ROOT_PASSWORD: cloudflare
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/database/data:/var/lib/mysql
+      - ./docker/database/init.sql:/data/application/init.sql
+
+volumes:
+  docker:
+    database:
+      data:
+
+
