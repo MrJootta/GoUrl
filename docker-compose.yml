@@ -24,7 +24,5 @@ services:
 
 volumes:
   docker:
-    database:
-      data:
 
 

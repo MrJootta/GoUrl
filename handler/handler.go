@@ -17,9 +17,8 @@ type response struct {
 	Data   interface{} `json:"response"`
 }
 
-type request struct {
-	URL  string `json:"url"`
-	Code string `json:"code"`
+type requestPost struct {
+	URL string `json:"url"`
 }
 
 type handler struct {
@@ -32,8 +31,8 @@ func New(storage storage.Service) http.Handler {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/encode/", wrapper(h.encode))
-	mux.HandleFunc("/info/", wrapper(h.info))
+	mux.HandleFunc("/create", wrapper(h.create))
+	mux.HandleFunc("/info", wrapper(h.info))
 	mux.HandleFunc("/", h.redirect)
 
 	return mux
@@ -57,12 +56,12 @@ func wrapper(h func(io.Writer, *http.Request) (interface{}, int, error)) http.Ha
 	}
 }
 
-func (h handler) encode(w io.Writer, r *http.Request) (interface{}, int, error) {
+func (h handler) create(w io.Writer, r *http.Request) (interface{}, int, error) {
 	if r.Method != http.MethodPost {
 		return nil, http.StatusMethodNotAllowed, fmt.Errorf("%s not allowed", r.Method)
 	}
 
-	var req request
+	var req requestPost
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("unable to decode: %v", err)

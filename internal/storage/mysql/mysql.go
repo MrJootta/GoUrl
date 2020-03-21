@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/MrJootta/GoUrl/internal/storage"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type mysql struct {
@@ -25,6 +26,7 @@ func New(host, port, username, password, database string) (storage.Service, erro
 	db, err := sql.Open("mysql", dataSource)
 
 	if err != nil {
+		log.Fatal(err.Error())
 		log.Fatal("Error connecting mysql database")
 	}
 
@@ -32,19 +34,19 @@ func New(host, port, username, password, database string) (storage.Service, erro
 }
 
 func (db *mysql) NewCode(code, url string) (string, error) {
-
+	return "", nil
 }
 
 func (db *mysql) GetURL(code string) (storage.UrlCode, error) {
-
+	return storage.UrlCode{}, nil
 }
 
 func (db *mysql) NewVisit(code string) error {
-
+	return nil
 }
 
 func (db *mysql) CodeInfo(code string) ([]storage.CodeVisit, error) {
-
+	return []storage.CodeVisit{}, nil
 }
 
 func (p *mysql) Close() error {
