@@ -2,7 +2,9 @@ package utils
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
+	"os"
 	"unicode"
 )
 
@@ -24,4 +26,8 @@ func GenerateCode() (string, error) {
 	}
 
 	return code, nil
+}
+
+func URLBuilder(code string) string {
+	return fmt.Sprintf("http://%s:%s/%s", os.Getenv("SERVER_HOST"), os.Getenv("SERVER_PORT"), code)
 }

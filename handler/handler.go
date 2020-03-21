@@ -6,16 +6,20 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
-
-	"github.com/MrJootta/GoUrl/internal/utils"
+	"net/url"
 
 	"github.com/MrJootta/GoUrl/internal/storage"
+	"github.com/MrJootta/GoUrl/internal/utils"
 )
 
 type response struct {
 	Status int         `json:"status"`
 	Data   interface{} `json:"response"`
+}
+
+type request struct {
+	URL  string `json:"url"`
+	Code string `json:"code"`
 }
 
 type handler struct {
@@ -28,21 +32,24 @@ func New(storage storage.Service) http.Handler {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/encode/", responseHandler(h.encode))
-	mux.HandleFunc("/info/", responseHandler(h.info))
+	mux.HandleFunc("/encode/", wrapper(h.encode))
+	mux.HandleFunc("/info/", wrapper(h.info))
 	mux.HandleFunc("/", h.redirect)
 
 	return mux
 }
 
-func responseHandler(h func(io.Writer, *http.Request) (interface{}, int, error)) http.HandlerFunc {
+func wrapper(h func(io.Writer, *http.Request) (interface{}, int, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, status, err := h(w, r)
+
 		if err != nil {
 			data = err.Error()
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(status)
+
 		err = json.NewEncoder(w).Encode(response{Data: data, Status: status})
 		if err != nil {
 			log.Printf("could not encode response to output: %v", err)
@@ -52,21 +59,18 @@ func responseHandler(h func(io.Writer, *http.Request) (interface{}, int, error))
 
 func (h handler) encode(w io.Writer, r *http.Request) (interface{}, int, error) {
 	if r.Method != http.MethodPost {
-		return nil, http.StatusMethodNotAllowed, fmt.Errorf("method %s not allowed", r.Method)
+		return nil, http.StatusMethodNotAllowed, fmt.Errorf("%s not allowed", r.Method)
 	}
 
-	var input struct{ URL string }
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		return nil, http.StatusBadRequest, fmt.Errorf("unable to decode request: %v", err)
+	var req request
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, http.StatusBadRequest, fmt.Errorf("unable to decode: %v", err)
 	}
 
-	url := strings.TrimSpace(input.URL)
-	if url == "" {
-		return nil, http.StatusBadRequest, fmt.Errorf("URL is empty")
-	}
-
-	if !strings.Contains(url, "http") {
-		url = "http://" + url
+	urlParam, err := url.Parse(req.URL)
+	if err != nil {
+		return nil, http.StatusBadRequest, fmt.Errorf("URL not valid")
 	}
 
 	code, err := utils.GenerateCode()
@@ -74,42 +78,64 @@ func (h handler) encode(w io.Writer, r *http.Request) (interface{}, int, error) 
 		return nil, http.StatusInternalServerError, fmt.Errorf("did not generated code: %s", err.Error())
 	}
 
-	c, err := h.storage.NewCode(code, url)
+	_, err = h.storage.NewCode(code, urlParam.String())
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("did not store in database: %v", err)
 	}
 
-	return c, http.StatusCreated, nil
+	returnData := struct {
+		Url  string `json:"url"`
+		Code string `json:"code"`
+	}{
+		utils.URLBuilder(code),
+		code,
+	}
+
+	return returnData, http.StatusCreated, nil
 }
 
 func (h handler) info(w io.Writer, r *http.Request) (interface{}, int, error) {
 	if r.Method != http.MethodGet {
-		return nil, http.StatusMethodNotAllowed, fmt.Errorf("Method %s not allowed", r.Method)
+		return nil, http.StatusMethodNotAllowed, fmt.Errorf("%s not allowed", r.Method)
 	}
 
 	code := r.URL.Path[len("/info/"):]
 
 	model, err := h.storage.CodeInfo(code)
 	if err != nil {
-		return nil, http.StatusNotFound, fmt.Errorf("URL not found")
+		return nil, http.StatusNotFound, fmt.Errorf("code not found, try to encode new url")
 	}
 
-	return model, http.StatusOK, nil
+	returnData := struct {
+		Url            string `json:"url"`
+		Code           string `json:"code"`
+		NumberOfVisits int    `json:"number_of_visits"`
+	}{
+		utils.URLBuilder(code),
+		code,
+		len(model),
+	}
+
+	return returnData, http.StatusOK, nil
 }
 
 func (h handler) redirect(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("endpoint only available over GET method"))
+
 		return
 	}
+
 	code := r.URL.Path[len("/"):]
 
-	url, err := h.storage.GetURL(code)
+	urlParam, err := h.storage.GetURL(code)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("URL Not Found"))
+		w.Write([]byte("code not found, try to encode new url"))
+
 		return
 	}
 
-	http.Redirect(w, r, url.URL, http.StatusMovedPermanently)
+	http.Redirect(w, r, urlParam.URL, http.StatusMovedPermanently)
 }
