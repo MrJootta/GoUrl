@@ -8,8 +8,8 @@ services:
     environment:
       MYSQL_DATABASE: shortlinks
       MYSQL_USER: johndoe
-      MYSQL_PASSWORD: cloudflare
-      MYSQL_ROOT_PASSWORD: cloudflare
+      MYSQL_PASSWORD: testing
+      MYSQL_ROOT_PASSWORD: testing
     ports:
       - "3306:3306"
     volumes:
