@@ -5,13 +5,14 @@ CREATE TABLE IF NOT EXISTS shortlinks.url (
 ENGINE=InnoDB
 DEFAULT CHARSET=latin1
 COLLATE=latin1_swedish_ci;
-CREATE UNIQUE INDEX url_code_IDX USING BTREE ON shortlinks.url (code);
 
 CREATE TABLE IF NOT EXISTS shortlinks.visits (
      code varchar(6) NOT NULL,
      `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 )
-    ENGINE=InnoDB
-    DEFAULT CHARSET=latin1
-    COLLATE=latin1_swedish_ci;
+ENGINE=InnoDB
+DEFAULT CHARSET=latin1
+COLLATE=latin1_swedish_ci;
+
+CREATE UNIQUE INDEX url_code_IDX USING BTREE ON shortlinks.url (code);
 CREATE INDEX visits_code_IDX USING BTREE ON shortlinks.visits (code);

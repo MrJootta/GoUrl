@@ -32,7 +32,7 @@ func New(storage storage.Service) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/create", wrapper(h.create))
-	mux.HandleFunc("/info", wrapper(h.info))
+	mux.HandleFunc("/info/", wrapper(h.info))
 	mux.HandleFunc("/", h.redirect)
 
 	return mux
@@ -67,7 +67,7 @@ func (h handler) create(w io.Writer, r *http.Request) (interface{}, int, error) 
 		return nil, http.StatusBadRequest, fmt.Errorf("unable to decode: %v", err)
 	}
 
-	urlParam, err := url.Parse(req.URL)
+	_, err := url.Parse(req.URL)
 	if err != nil {
 		return nil, http.StatusBadRequest, fmt.Errorf("URL not valid")
 	}
@@ -77,7 +77,7 @@ func (h handler) create(w io.Writer, r *http.Request) (interface{}, int, error) 
 		return nil, http.StatusInternalServerError, fmt.Errorf("did not generated code: %s", err.Error())
 	}
 
-	_, err = h.storage.NewCode(code, urlParam.String())
+	_, err = h.storage.NewCode(code, req.URL)
 	if err != nil {
 		return nil, http.StatusInternalServerError, fmt.Errorf("did not store in database: %v", err)
 	}
@@ -135,6 +135,8 @@ func (h handler) redirect(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	h.storage.NewVisit(code)
 
 	http.Redirect(w, r, urlParam.URL, http.StatusMovedPermanently)
 }
