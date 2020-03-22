@@ -74,6 +74,24 @@ _Status Codes_
 
 ### Setup
 
+To setup the application you just need to run the following commands
+
+```
+$ -> docker-compose up
+$ -> go run main.go
+```
+
 ### Current implementation
 
+##### Services
+
+- Mysql database
+- Go Application
+
 ### Ideal Implementation
+
+##### Services
+
+- Mysql database
+- Memcached
+- Go Application
