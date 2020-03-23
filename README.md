@@ -116,5 +116,14 @@ _OpenTracing_
 
 The new OpenTelemetrics is still in beta so would be using OpenTrancing for the metrics
 
+_Circuit Breaker_
+
+Would use a circuit breaker like [hystrix](https://godoc.org/github.com/afex/hystrix-go/hystrix) to be a layer between application and database/queue
+
+_Monitoring_ 
+
+Besides OpenTracing i'm very found of [Sentry](https://sentry.io), also using jaeger to connect with OpenTracing and grafana for the dashboards
+
+
 
 
