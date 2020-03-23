@@ -78,6 +78,7 @@ To setup the application you just need to run the following commands
 
 ```
 $ -> docker-compose up
+$ -> go mod tidy
 $ -> go run main.go
 ```
 
@@ -95,3 +96,25 @@ $ -> go run main.go
 - Mysql database
 - Memcached
 - Go Application
+- RabbitMQ
+
+_MySql_
+
+To store the application data, preferably with a master/slave architecture
+
+_Memcached_ 
+
+To store the keys code/url to speed up the access to the URL when redirect call happen
+
+_RabbitMQ_
+
+To deal with process's that can be done using a event driven pattern like when we count the visits, visit count and save is not priority feature for the app and can be done with sime delay
+
+##### Metrics
+
+_OpenTracing_
+
+The new OpenTelemetrics is still in beta so would be using OpenTrancing for the metrics
+
+
+

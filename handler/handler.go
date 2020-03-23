@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/MrJootta/GoUrl/internal/storage"
 	"github.com/MrJootta/GoUrl/internal/utils"
@@ -23,6 +24,11 @@ type requestPost struct {
 
 type handler struct {
 	storage storage.Service
+}
+
+type logError struct {
+	Error     string    `json:"error"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // New returns handler
@@ -43,6 +49,13 @@ func wrapper(h func(io.Writer, *http.Request) (interface{}, int, error)) http.Ha
 		data, status, err := h(w, r)
 
 		if err != nil {
+			e := logError{
+				err.Error(),
+				time.Now(),
+			}
+
+			log.Print(json.Marshal(e))
+
 			data = err.Error()
 		}
 
@@ -132,6 +145,14 @@ func (h handler) redirect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("code not found, try to encode new url"))
+
+		e := logError{
+			err.Error(),
+			time.Now(),
+		}
+		marshal, _ := json.Marshal(e)
+
+		log.Print(string(marshal))
 
 		return
 	}
